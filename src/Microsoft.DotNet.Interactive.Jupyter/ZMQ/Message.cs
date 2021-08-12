@@ -50,7 +50,7 @@ namespace Microsoft.DotNet.Interactive.Jupyter.ZMQ
             Content = content ?? Protocol.Message.Empty;
             Signature = signature ?? string.Empty;
         }
-
+        
         public static Message Create<T>(T content,
             Header parentHeader = null,
             IReadOnlyList<IReadOnlyList<byte>> identifiers = null,
@@ -66,6 +66,28 @@ namespace Microsoft.DotNet.Interactive.Jupyter.ZMQ
             var session = parentHeader?.Session ?? Guid.NewGuid().ToString();
             var header = Header.Create(content, session);
             var message = new Message(header, parentHeader: parentHeader, content: content, identifiers: identifiers, signature: signature, metaData: metaData);
+
+            return message;
+        }
+
+        public static Message Create<T>(T content,
+            Session session,
+            IReadOnlyList<IReadOnlyList<byte>> identifiers = null,
+            IReadOnlyDictionary<string, object> metaData = null)
+            where T : Protocol.Message
+        {
+            if (content is null)
+            {
+                throw new ArgumentNullException(nameof(content));
+            }
+
+            if (session is null)
+            {
+                throw new ArgumentNullException(nameof(session));
+            }
+
+            var header = Header.Create(content, session);
+            var message = new Message(header, parentHeader: null, content: content, identifiers: identifiers, signature: null, metaData: metaData);
 
             return message;
         }
