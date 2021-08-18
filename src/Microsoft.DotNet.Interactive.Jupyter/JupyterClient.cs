@@ -14,9 +14,9 @@ using NetMQ.Sockets;
 
 namespace Microsoft.DotNet.Interactive.Jupyter
 {
-    public class JupyterClient : IObservable<(JupyterChannel channel, ZMQ.Message message)>
+    public class JupyterClient : IObservable<(JupyterChannel channel, ZMQ.Message message)>, IDisposable
     {
-        private readonly JupyterKernel _jupyterKernel;
+        private readonly JupyterKernelSession _jupyterKernelSession;
         private SignatureValidator _signatureValidator;
         private DealerSocket _shellSocket;
         private DealerSocket _controlSocket;
@@ -26,40 +26,40 @@ namespace Microsoft.DotNet.Interactive.Jupyter
         private Dictionary<JupyterChannel, MessageSender> _senders;
         private readonly Subject<(JupyterChannel channel, ZMQ.Message message)> _messageChannel = new();
 
-        public JupyterClient(JupyterKernel jupyterKernel)
+        public JupyterClient(JupyterKernelSession jupyterKernelSession)
 	    {
-            if (jupyterKernel is null)
+            if (jupyterKernelSession is null)
             {
-                throw new ArgumentNullException(nameof(jupyterKernel));
+                throw new ArgumentNullException(nameof(jupyterKernelSession));
             }
 
-            _jupyterKernel = jupyterKernel;
+            _jupyterKernelSession = jupyterKernelSession;
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _signatureValidator = new SignatureValidator(_jupyterKernel.Session.Key, "HMACSHA256");
+            _signatureValidator = new SignatureValidator(_jupyterKernelSession.Session.Key, "HMACSHA256");
 
             _shellSocket = new DealerSocket();
-            _shellSocket.Options.Identity = Encoding.UTF8.GetBytes(_jupyterKernel.Session.Id);
+            _shellSocket.Options.Identity = Encoding.UTF8.GetBytes(_jupyterKernelSession.Session.Id);
             _shellSocket.Options.Linger = TimeSpan.FromMilliseconds(1000);
-            _shellSocket.Connect($"tcp://localhost:{_jupyterKernel.ConnectionInformation.ShellPort}");
+            _shellSocket.Connect($"tcp://localhost:{_jupyterKernelSession.ConnectionInformation.ShellPort}");
 
             _controlSocket = new DealerSocket();
-            _controlSocket.Options.Identity = Encoding.UTF8.GetBytes(_jupyterKernel.Session.Id);
+            _controlSocket.Options.Identity = Encoding.UTF8.GetBytes(_jupyterKernelSession.Session.Id);
             _controlSocket.Options.Linger = TimeSpan.FromMilliseconds(1000);
-            _controlSocket.Connect($"tcp://localhost:{_jupyterKernel.ConnectionInformation.ShellPort}");
+            _controlSocket.Connect($"tcp://localhost:{_jupyterKernelSession.ConnectionInformation.ShellPort}");
 
             _ioPubSocket = new SubscriberSocket();
             _ioPubSocket.Subscribe("");
-            _ioPubSocket.Options.Identity = Encoding.UTF8.GetBytes(_jupyterKernel.Session.Id);
+            _ioPubSocket.Options.Identity = Encoding.UTF8.GetBytes(_jupyterKernelSession.Session.Id);
             _ioPubSocket.Options.Linger = TimeSpan.FromMilliseconds(1000);
-            _ioPubSocket.Connect($"tcp://localhost:{_jupyterKernel.ConnectionInformation.ShellPort}");
+            _ioPubSocket.Connect($"tcp://localhost:{_jupyterKernelSession.ConnectionInformation.ShellPort}");
 
             _stdInSocket = new DealerSocket();
-            _stdInSocket.Options.Identity = Encoding.UTF8.GetBytes(_jupyterKernel.Session.Id);
+            _stdInSocket.Options.Identity = Encoding.UTF8.GetBytes(_jupyterKernelSession.Session.Id);
             _stdInSocket.Options.Linger = TimeSpan.FromMilliseconds(1000);
-            _stdInSocket.Connect($"tcp://localhost:{_jupyterKernel.ConnectionInformation.ShellPort}");
+            _stdInSocket.Connect($"tcp://localhost:{_jupyterKernelSession.ConnectionInformation.ShellPort}");
 
             _sockets = new Dictionary<JupyterChannel, NetMQSocket>
             {
@@ -110,7 +110,7 @@ namespace Microsoft.DotNet.Interactive.Jupyter
                 throw new ArgumentNullException(nameof(message));
             }
 
-            return ZMQ.Message.Create(message, _jupyterKernel.Session);
+            return ZMQ.Message.Create(message, _jupyterKernelSession.Session);
         }
 
         public ZMQ.Message CreateMessage<T>(T message, string commandToken) where T : Protocol.Message
@@ -130,12 +130,17 @@ namespace Microsoft.DotNet.Interactive.Jupyter
                 ["commandToken"] = commandToken
             };
 
-            return ZMQ.Message.Create(message, _jupyterKernel.Session, metaData: metaData);
+            return ZMQ.Message.Create(message, _jupyterKernelSession.Session, metaData: metaData);
         }
 
         public IDisposable Subscribe(IObserver<(JupyterChannel channel, ZMQ.Message message)> observer)
         {
             return _messageChannel.Subscribe(observer);
+        }
+
+        public void Dispose()
+        {
+            throw new NotImplementedException();
         }
     }
 
