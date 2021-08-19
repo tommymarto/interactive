@@ -32,7 +32,7 @@ namespace Microsoft.DotNet.Interactive.Jupyter.Tests
         public async Task sends_ExecuteInput_when_ExecuteRequest_is_handled()
         {
             var scheduler = CreateScheduler();
-            var request = ZeroMQMessage.Create(new ExecuteRequest("var a =12;"));
+            var request = ZeroMQMessage.Create(new ExecuteRequest("var a =12;"), new Session());
             var context = new JupyterRequestContext(JupyterMessageSender, request);
             await scheduler.Schedule(context);
 
@@ -48,7 +48,7 @@ namespace Microsoft.DotNet.Interactive.Jupyter.Tests
         public async Task sends_ExecuteReply_message_on_when_code_submission_is_handled()
         {
             var scheduler = CreateScheduler();
-            var request = ZeroMQMessage.Create(new ExecuteRequest("var a =12;"));
+            var request = ZeroMQMessage.Create(new ExecuteRequest("var a =12;"), new Session());
             var context = new JupyterRequestContext(JupyterMessageSender, request);
             await scheduler.Schedule(context);
 
@@ -63,7 +63,7 @@ namespace Microsoft.DotNet.Interactive.Jupyter.Tests
         public async Task sends_ExecuteReply_with_error_message_on_when_code_submission_contains_errors()
         {
             var scheduler = CreateScheduler();
-            var request = ZeroMQMessage.Create(new ExecuteRequest("asdes"));
+            var request = ZeroMQMessage.Create(new ExecuteRequest("asdes"), new Session());
             var context = new JupyterRequestContext(JupyterMessageSender, request);
             await scheduler.Schedule(context);
 
@@ -92,7 +92,7 @@ void f()
     
 }
 
-f();"));
+f();"), new Session());
             var context = new JupyterRequestContext(JupyterMessageSender, request);
 
             await scheduler.Schedule(context);
@@ -120,7 +120,7 @@ f();"));
         public async Task does_not_expose_stacktrace_when_code_submission_contains_errors()
         {
             var scheduler = CreateScheduler();
-            var request = ZeroMQMessage.Create(new ExecuteRequest("asdes asdasd"));
+            var request = ZeroMQMessage.Create(new ExecuteRequest("asdes asdasd"), new Session());
             var context = new JupyterRequestContext(JupyterMessageSender, request);
             await scheduler.Schedule(context);
 
@@ -141,7 +141,7 @@ f();"));
         {
             var scheduler = CreateScheduler();
             SetKernelLanguage(language);
-            var request = ZeroMQMessage.Create(new ExecuteRequest("1+!"));
+            var request = ZeroMQMessage.Create(new ExecuteRequest("1+!"), new Session());
             var context = new JupyterRequestContext(JupyterMessageSender, request);
             await scheduler.Schedule(context);
 
@@ -159,7 +159,7 @@ f();"));
         public async Task sends_DisplayData_message_on_ValueProduced()
         {
             var scheduler = CreateScheduler();
-            var request = ZeroMQMessage.Create(new ExecuteRequest("display(2+2);"));
+            var request = ZeroMQMessage.Create(new ExecuteRequest("display(2+2);"), new Session());
             var context = new JupyterRequestContext(JupyterMessageSender, request);
             await scheduler.Schedule(context);
 
@@ -172,7 +172,7 @@ f();"));
         public async Task sends_DisplayData_message_with_json_when_json_mimetype_is_requested()
         {
             var scheduler = CreateScheduler();
-            var request = ZeroMQMessage.Create(new ExecuteRequest(@"display(2+2,""application/json"");"));
+            var request = ZeroMQMessage.Create(new ExecuteRequest(@"display(2+2,""application/json"");"), new Session());
             var context = new JupyterRequestContext(JupyterMessageSender, request);
             await scheduler.Schedule(context);
 
@@ -190,7 +190,7 @@ f();"));
         {
             var scheduler = CreateScheduler();
             SetKernelLanguage(language);
-            var request = ZeroMQMessage.Create(new ExecuteRequest("display(2+2)"));
+            var request = ZeroMQMessage.Create(new ExecuteRequest("display(2+2)"), new Session());
             var context = new JupyterRequestContext(JupyterMessageSender, request);
             await scheduler.Schedule(context);
 
@@ -212,7 +212,7 @@ f();"));
             command.Properties["publish-internal-events"] = true;
 
             DeferCommand(command);
-            var request = ZeroMQMessage.Create(new ExecuteRequest("display(2+2)"));
+            var request = ZeroMQMessage.Create(new ExecuteRequest("display(2+2)"), new Session());
             var context = new JupyterRequestContext(JupyterMessageSender, request);
             await scheduler.Schedule(context);
 
@@ -228,7 +228,7 @@ f();"));
         public async Task sends_Stream_message_on_StandardOutputValueProduced()
         {
             var scheduler = CreateScheduler();
-            var request = ZeroMQMessage.Create(new ExecuteRequest("Console.WriteLine(2+2);"));
+            var request = ZeroMQMessage.Create(new ExecuteRequest("Console.WriteLine(2+2);"), new Session());
             var context = new JupyterRequestContext(JupyterMessageSender, request);
             await scheduler.Schedule(context);
 
@@ -241,7 +241,7 @@ f();"));
         public async Task sends_Stream_message_on_StandardErrorValueProduced()
         {
             var scheduler = CreateScheduler();
-            var request = ZeroMQMessage.Create(new ExecuteRequest("Console.Error.WriteLine(2+2);"));
+            var request = ZeroMQMessage.Create(new ExecuteRequest("Console.Error.WriteLine(2+2);"), new Session());
             var context = new JupyterRequestContext(JupyterMessageSender, request);
             await scheduler.Schedule(context);
 
@@ -254,7 +254,7 @@ f();"));
         public async Task sends_ExecuteReply_message_on_ReturnValueProduced()
         {
             var scheduler = CreateScheduler();
-            var request = ZeroMQMessage.Create(new ExecuteRequest("2+2"));
+            var request = ZeroMQMessage.Create(new ExecuteRequest("2+2"), new Session());
             var context = new JupyterRequestContext(JupyterMessageSender, request);
             await scheduler.Schedule(context);
 
@@ -275,7 +275,7 @@ f();"));
         public async Task sends_ExecuteReply_message_when_submission_contains_only_a_directive()
         {
             var scheduler = CreateScheduler();
-            var request = ZeroMQMessage.Create(new ExecuteRequest("#!csharp"));
+            var request = ZeroMQMessage.Create(new ExecuteRequest("#!csharp"), new Session());
             var context = new JupyterRequestContext(JupyterMessageSender, request);
             await scheduler.Schedule(context);
 
@@ -290,7 +290,7 @@ f();"));
         public async Task sends_ExecuteReply_message_when_submission_contains_a_language_directive_and_trailing_expression()
         {
             var scheduler = CreateScheduler();
-            var request = ZeroMQMessage.Create(new ExecuteRequest("#!fsharp\n123"));
+            var request = ZeroMQMessage.Create(new ExecuteRequest("#!fsharp\n123"), new Session());
             var context = new JupyterRequestContext(JupyterMessageSender, request);
             await scheduler.Schedule(context);
 
@@ -316,7 +316,7 @@ f();"));
         public async Task sends_InputRequest_message_when_submission_requests_user_input_in_csharp(string code, string prompt, string expectedDisplayValue)
         {
             var scheduler = CreateScheduler();
-            var request = ZeroMQMessage.Create(new ExecuteRequest(code));
+            var request = ZeroMQMessage.Create(new ExecuteRequest(code), new Session());
             var context = new JupyterRequestContext(JupyterMessageSender, request);
             await scheduler.Schedule(context);
 
@@ -337,7 +337,7 @@ f();"));
             SetKernelLanguage(Language.PowerShell);
 
             var scheduler = CreateScheduler();
-            var request = ZeroMQMessage.Create(new ExecuteRequest(code));
+            var request = ZeroMQMessage.Create(new ExecuteRequest(code), new Session());
             var context = new JupyterRequestContext(JupyterMessageSender, request);
             await scheduler.Schedule(context);
 
@@ -357,7 +357,7 @@ f();"));
             using var _ = LogEvents.Subscribe(e => log.Append(e.ToLogString()));
 
             var scheduler = CreateScheduler();
-            var request = ZeroMQMessage.Create(new ExecuteRequest("password(\"Password: \")"));
+            var request = ZeroMQMessage.Create(new ExecuteRequest("password(\"Password: \")"), new Session());
             var context = new JupyterRequestContext(JupyterMessageSender, request);
             await scheduler.Schedule(context);
 
@@ -372,7 +372,7 @@ f();"));
         public async Task sends_InputRequest_message_when_submission_requests_user_password_in_csharp(string code, string prompt)
         {
             var scheduler = CreateScheduler();
-            var request = ZeroMQMessage.Create(new ExecuteRequest(code));
+            var request = ZeroMQMessage.Create(new ExecuteRequest(code), new Session());
             var context = new JupyterRequestContext(JupyterMessageSender, request);
             await scheduler.Schedule(context);
 
@@ -393,7 +393,7 @@ f();"));
             SetKernelLanguage(Language.PowerShell);
 
             var scheduler = CreateScheduler();
-            var request = ZeroMQMessage.Create(new ExecuteRequest(code));
+            var request = ZeroMQMessage.Create(new ExecuteRequest(code), new Session());
             var context = new JupyterRequestContext(JupyterMessageSender, request);
             await scheduler.Schedule(context);
 
@@ -410,7 +410,7 @@ f();"));
         public async Task Shows_not_supported_exception_when_stdin_not_allowed_and_input_is_requested()
         {
             var scheduler = CreateScheduler();
-            var request = ZeroMQMessage.Create(new ExecuteRequest("input()", allowStdin: false));
+            var request = ZeroMQMessage.Create(new ExecuteRequest("input()", allowStdin: false), new Session());
             var context = new JupyterRequestContext(JupyterMessageSender, request);
 
             await scheduler.Schedule(context);
@@ -434,7 +434,7 @@ f();"));
         public async Task Shows_not_supported_exception_when_stdin_not_allowed_and_password_is_requested()
         {
             var scheduler = CreateScheduler();
-            var request = ZeroMQMessage.Create(new ExecuteRequest("password()", allowStdin: false));
+            var request = ZeroMQMessage.Create(new ExecuteRequest("password()", allowStdin: false), new Session());
             var context = new JupyterRequestContext(JupyterMessageSender, request);
 
             await scheduler.Schedule(context);
@@ -461,7 +461,7 @@ f();"));
             {
                 { "dotnet_interactive", new InputCellMetadata ("fsharp") }
             };
-            var request = ZeroMQMessage.Create(new ExecuteRequest("1+1"), metaData: metaData);
+            var request = ZeroMQMessage.Create(new ExecuteRequest("1+1"), new Session(), metaData: metaData);
             var context = new JupyterRequestContext(JupyterMessageSender, request);
             var language = context.GetLanguage();
             language
@@ -472,7 +472,7 @@ f();"));
         [Fact]
         public void cell_language_defaults_to_null_when_it_cant_be_found()
         {
-            var request = ZeroMQMessage.Create(new ExecuteRequest("1+1"));
+            var request = ZeroMQMessage.Create(new ExecuteRequest("1+1"), new Session());
             var context = new JupyterRequestContext(JupyterMessageSender, request);
             var language = context.GetLanguage();
             language

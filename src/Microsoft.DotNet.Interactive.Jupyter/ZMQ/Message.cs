@@ -52,7 +52,7 @@ namespace Microsoft.DotNet.Interactive.Jupyter.ZMQ
         }
         
         public static Message Create<T>(T content,
-            Header parentHeader = null,
+            Header parentHeader,
             IReadOnlyList<IReadOnlyList<byte>> identifiers = null,
             IReadOnlyDictionary<string, object> metaData = null,
             string signature = null)
@@ -63,7 +63,12 @@ namespace Microsoft.DotNet.Interactive.Jupyter.ZMQ
                 throw new ArgumentNullException(nameof(content));
             }
 
-            var session = parentHeader?.Session ?? Guid.NewGuid().ToString();
+            if (parentHeader == null)
+            {
+                throw new ArgumentNullException(nameof(parentHeader));
+            }
+
+            var session = parentHeader.Session ?? Guid.NewGuid().ToString();
             var header = Header.Create(content, session);
             var message = new Message(header, parentHeader: parentHeader, content: content, identifiers: identifiers, signature: signature, metaData: metaData);
 

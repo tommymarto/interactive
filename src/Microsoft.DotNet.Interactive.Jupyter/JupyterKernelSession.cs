@@ -23,14 +23,14 @@ namespace Microsoft.DotNet.Interactive.Jupyter
         }
 
         public string Name { get; }
+
         public Session Session { get; }
-        public ConnectionInformation ConnectionInformation { get; private set; }
 
         public void Dispose()
         {
             throw new NotImplementedException();
         }
-        public async Task StartAsync(CancellationToken cancellationToken)
+        public async Task StartAsync(ConnectionInformation connectionInformation, CancellationToken cancellationToken)
         {
             var connectionFile = Path.Combine(
                 Path.GetTempPath(),
@@ -38,27 +38,9 @@ namespace Microsoft.DotNet.Interactive.Jupyter
                 "runtime",
                 $"{Session.Id}.json");
 
-            var connectionInformationTask = GetConnectionInformationAsync(connectionFile, cancellationToken);
-
-            // TODO: start process
-
-            ConnectionInformation = await connectionInformationTask;
+            await File.WriteAllTextAsync(connectionFile, JsonSerializer.Serialize(connectionInformation), cancellationToken);
 
             throw new NotImplementedException();
-        }
-
-        private async Task<ConnectionInformation> GetConnectionInformationAsync(string connectionFile, CancellationToken cancellationToken)
-        {
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
-            var timeout = TimeSpan.FromSeconds(10);
-            while (!File.Exists(connectionFile) && stopWatch.Elapsed < timeout)
-            {
-                await Task.Delay(250);
-            }
-            await Task.Delay(500);
-            var content = await File.ReadAllTextAsync(connectionFile, cancellationToken);
-            return JsonSerializer.Deserialize<ConnectionInformation>(content);
         }
     }
 }

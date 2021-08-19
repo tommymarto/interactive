@@ -61,6 +61,7 @@ namespace Microsoft.DotNet.Interactive.Jupyter.ZMQ
             {
                 throw new ArgumentNullException(nameof(messageContent));
             }
+
             return Create(messageContent.MessageType, session);
         }
 

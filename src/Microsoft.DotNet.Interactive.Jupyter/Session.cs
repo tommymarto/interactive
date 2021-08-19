@@ -13,12 +13,12 @@ namespace Microsoft.DotNet.Interactive.Jupyter
 
         public string Username { get; }
 
-        public static string ProtocolVersion => "5.0";
+        public string ProtocolVersion => Constants.MESSAGE_PROTOCOL_VERSION;
 
-        public Session(string username = "username")
+        public Session(string username = null)
         {
             Id = Guid.NewGuid().ToString();
-            Username = username;
+            Username = username?? Constants.USERNAME;
         }
     }
 }
