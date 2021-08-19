@@ -26,6 +26,7 @@ namespace Microsoft.DotNet.Interactive.Jupyter
         private readonly Subject<(JupyterChannel channel, ZMQ.Message message)> _messageChannel = new();
         private RequestSocket _hbSocket;
         private readonly object _channelsLock = new();
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
         public ConnectionInformation ConnectionInformation { get; private set; }
 
@@ -34,19 +35,28 @@ namespace Microsoft.DotNet.Interactive.Jupyter
             _jupyterKernelSession = jupyterKernelSession ?? throw new ArgumentNullException(nameof(jupyterKernelSession));
         }
 
-        public Task StartAsync(CancellationToken cancellationToken)
+        public Task StartAsync(CancellationToken cancellationToken = default)
         {
+            if (!ChannelsAreOpen())
+            {
+                throw new InvalidOperationException("Channels must be open before starting the client");
+            }
+            
+            cancellationToken.Register(() => _cancellationTokenSource.Cancel());
+
+            var token = _cancellationTokenSource.Token;
+
             foreach(var entry in _sockets)
             {
                 var receiver = new MessageReceiver(entry.Value);
                 Task.Run(async () =>
                 {
-                    while (!cancellationToken.IsCancellationRequested)
+                    while (!token.IsCancellationRequested)
                     {
-                        var message = await receiver.ReceiveAsync(cancellationToken);
+                        var message = await receiver.ReceiveAsync(token);
                         _messageChannel.OnNext((entry.Key, message));
                     }
-                }, cancellationToken);
+                }, token);
             }
 
             return Task.CompletedTask;
@@ -99,10 +109,12 @@ namespace Microsoft.DotNet.Interactive.Jupyter
 
         public void Dispose()
         {
-            throw new NotImplementedException();
+            _cancellationTokenSource.Cancel();
+            _cancellationTokenSource.Dispose();
+            CloseChannels();
         }
 
-        public void CloseChannels()
+        private void CloseChannels()
         {
             lock (_channelsLock)
             {
