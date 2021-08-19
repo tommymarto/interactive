@@ -1,13 +1,12 @@
-﻿using System;
+﻿// Copyright (c) .NET Foundation and contributors. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Net.Sockets;
 using System.Reactive.Subjects;
 using System.Text;
 using System.Threading;
-using System.Threading.Channels;
 using System.Threading.Tasks;
-using Microsoft.DotNet.Interactive.Jupyter.Protocol;
 using Microsoft.DotNet.Interactive.Jupyter.ZMQ;
 using NetMQ;
 using NetMQ.Sockets;
@@ -28,12 +27,7 @@ namespace Microsoft.DotNet.Interactive.Jupyter
 
         public JupyterClient(JupyterKernelSession jupyterKernelSession)
 	    {
-            if (jupyterKernelSession is null)
-            {
-                throw new ArgumentNullException(nameof(jupyterKernelSession));
-            }
-
-            _jupyterKernelSession = jupyterKernelSession;
+            _jupyterKernelSession = jupyterKernelSession ?? throw new ArgumentNullException(nameof(jupyterKernelSession));
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
