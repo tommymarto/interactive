@@ -8,6 +8,7 @@ namespace Microsoft.DotNet.Interactive.Jupyter
         Shell, 
         Control, 
         IoPub, 
-        StdIn
+        StdIn,
+        HeartBeat
     }
 }

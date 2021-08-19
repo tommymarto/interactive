@@ -22,7 +22,7 @@ namespace Microsoft.DotNet.Interactive.Jupyter.Tests
         public async Task sends_InterruptReply()
         {
             var scheduler = CreateScheduler();
-            var request = ZeroMQMessage.Create(new InterruptRequest(), null);
+            var request = ZeroMQMessage.Create(new InterruptRequest(), new Session());
             var context = new JupyterRequestContext(JupyterMessageSender, request);
 
             await scheduler.Schedule(context);

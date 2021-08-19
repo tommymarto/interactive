@@ -24,6 +24,9 @@ namespace Microsoft.DotNet.Interactive.Jupyter
         private Dictionary<JupyterChannel, NetMQSocket> _sockets;
         private Dictionary<JupyterChannel, MessageSender> _senders;
         private readonly Subject<(JupyterChannel channel, ZMQ.Message message)> _messageChannel = new();
+        private RequestSocket _hbSocket;
+
+        public ConnectionInformation ConnectionInformation { get; private set; }
 
         public JupyterClient(JupyterKernelSession jupyterKernelSession)
 	    {
@@ -32,45 +35,6 @@ namespace Microsoft.DotNet.Interactive.Jupyter
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _signatureValidator = new SignatureValidator(_jupyterKernelSession.Session.Key, "HMACSHA256");
-
-            _shellSocket = new DealerSocket();
-            _shellSocket.Options.Identity = Encoding.UTF8.GetBytes(_jupyterKernelSession.Session.Id);
-            _shellSocket.Options.Linger = TimeSpan.FromMilliseconds(1000);
-            _shellSocket.Connect($"tcp://localhost:{_jupyterKernelSession.ConnectionInformation.ShellPort}");
-
-            _controlSocket = new DealerSocket();
-            _controlSocket.Options.Identity = Encoding.UTF8.GetBytes(_jupyterKernelSession.Session.Id);
-            _controlSocket.Options.Linger = TimeSpan.FromMilliseconds(1000);
-            _controlSocket.Connect($"tcp://localhost:{_jupyterKernelSession.ConnectionInformation.ShellPort}");
-
-            _ioPubSocket = new SubscriberSocket();
-            _ioPubSocket.Subscribe("");
-            _ioPubSocket.Options.Identity = Encoding.UTF8.GetBytes(_jupyterKernelSession.Session.Id);
-            _ioPubSocket.Options.Linger = TimeSpan.FromMilliseconds(1000);
-            _ioPubSocket.Connect($"tcp://localhost:{_jupyterKernelSession.ConnectionInformation.ShellPort}");
-
-            _stdInSocket = new DealerSocket();
-            _stdInSocket.Options.Identity = Encoding.UTF8.GetBytes(_jupyterKernelSession.Session.Id);
-            _stdInSocket.Options.Linger = TimeSpan.FromMilliseconds(1000);
-            _stdInSocket.Connect($"tcp://localhost:{_jupyterKernelSession.ConnectionInformation.ShellPort}");
-
-            _sockets = new Dictionary<JupyterChannel, NetMQSocket>
-            {
-                [JupyterChannel.Shell] = _shellSocket,
-                [JupyterChannel.Control] = _controlSocket,
-                [JupyterChannel.IoPub] = _ioPubSocket,
-                [JupyterChannel.StdIn] = _stdInSocket
-            };
-
-            _senders = new Dictionary<JupyterChannel, MessageSender>
-            {
-                [JupyterChannel.Shell] = new MessageSender(_shellSocket, _signatureValidator),
-                [JupyterChannel.Control] = new MessageSender(_controlSocket, _signatureValidator),
-                [JupyterChannel.IoPub] = new MessageSender(_ioPubSocket, _signatureValidator),
-                [JupyterChannel.StdIn] = new MessageSender(_stdInSocket, _signatureValidator)
-            };
-
             foreach(var entry in _sockets)
             {
                 var receiver = new MessageReceiver(entry.Value);
@@ -136,7 +100,65 @@ namespace Microsoft.DotNet.Interactive.Jupyter
         {
             throw new NotImplementedException();
         }
-    }
 
-    public enum JupyterChannel { Shell, Control, IoPub, StdIn }
+        public void OpenChannles()
+        {
+            _shellSocket = new DealerSocket();
+            _shellSocket.Options.Identity = Encoding.UTF8.GetBytes(_jupyterKernelSession.Session.Id);
+            _shellSocket.Options.Linger = TimeSpan.FromMilliseconds(1000);
+            var shellPort = _shellSocket.BindRandomPort("tcp://localhost");
+
+            _controlSocket = new DealerSocket();
+            _controlSocket.Options.Identity = Encoding.UTF8.GetBytes(_jupyterKernelSession.Session.Id);
+            _controlSocket.Options.Linger = TimeSpan.FromMilliseconds(1000);
+            var controlPort = _controlSocket.BindRandomPort("tcp://localhost");
+
+            _ioPubSocket = new SubscriberSocket();
+            _ioPubSocket.Subscribe("");
+            _ioPubSocket.Options.Identity = Encoding.UTF8.GetBytes(_jupyterKernelSession.Session.Id);
+            _ioPubSocket.Options.Linger = TimeSpan.FromMilliseconds(1000);
+            var ioPubPort = _ioPubSocket.BindRandomPort("tcp://localhost");
+
+            _stdInSocket = new DealerSocket();
+            _stdInSocket.Options.Identity = Encoding.UTF8.GetBytes(_jupyterKernelSession.Session.Id);
+            _stdInSocket.Options.Linger = TimeSpan.FromMilliseconds(1000);
+            var stdInPort = _stdInSocket.BindRandomPort("tcp://localhost");
+
+            _hbSocket = new RequestSocket();
+            _hbSocket.Options.Identity = Encoding.UTF8.GetBytes(_jupyterKernelSession.Session.Id);
+            _hbSocket.Options.Linger = TimeSpan.FromMilliseconds(1000);
+            var hbSocketPort = _stdInSocket.BindRandomPort("tcp://localhost");
+
+            ConnectionInformation = new ConnectionInformation
+            {
+                ControlPort = controlPort,
+                ShellPort = shellPort,
+                IOPubPort = ioPubPort,
+                StdinPort = stdInPort,
+                HBPort = hbSocketPort,
+                Transport = "tcp",
+                IP = "localhost",
+                Key = _jupyterKernelSession.Session.Key,
+                SignatureScheme = "hmac-sha256"
+            };
+
+            _signatureValidator = new SignatureValidator(_jupyterKernelSession.Session.Key, "HMACSHA256");
+
+            _sockets = new Dictionary<JupyterChannel, NetMQSocket>
+            {
+                [JupyterChannel.Shell] = _shellSocket,
+                [JupyterChannel.Control] = _controlSocket,
+                [JupyterChannel.IoPub] = _ioPubSocket,
+                [JupyterChannel.StdIn] = _stdInSocket
+            };
+
+            _senders = new Dictionary<JupyterChannel, MessageSender>
+            {
+                [JupyterChannel.Shell] = new(_shellSocket, _signatureValidator),
+                [JupyterChannel.Control] = new(_controlSocket, _signatureValidator),
+                [JupyterChannel.IoPub] = new(_ioPubSocket, _signatureValidator),
+                [JupyterChannel.StdIn] = new(_stdInSocket, _signatureValidator)
+            };
+        }
+    }
 }
