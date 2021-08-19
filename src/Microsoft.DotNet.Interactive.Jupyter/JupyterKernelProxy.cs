@@ -115,7 +115,7 @@ namespace Microsoft.DotNet.Interactive.Jupyter
                     RegisterForDisposal(_client.Subscribe(HandleResponse));
                     RegisterForDisposal(_client);
                     RegisterForDisposal(_kernelSession);
-                    _client.OpenChannles();
+                    _client.OpenChannels();
                     _kernelSession.StartAsync(_client.ConnectionInformation, cancellationToken).Wait(cancellationToken);
                     _client.StartAsync(cancellationToken);
                 }
