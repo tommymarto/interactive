@@ -26,7 +26,7 @@ namespace Microsoft.DotNet.Interactive.Jupyter
         private readonly Subject<(JupyterChannel channel, ZMQ.Message message)> _messageChannel = new();
         private RequestSocket _hbSocket;
         private readonly object _channelsLock = new();
-        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        private readonly CancellationTokenSource _cancellationTokenSource = new();
 
         public ConnectionInformation ConnectionInformation { get; private set; }
 
